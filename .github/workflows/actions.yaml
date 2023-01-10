@@ -1,5 +1,9 @@
-on: [push]
-name: Work
+name: Update profile
+
+on:
+  schedule:
+    - cron: '0 9 * * 1-5'
+    
 jobs:
   update-profile-readme:
     runs-on: ubuntu-latest
