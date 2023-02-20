@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	gh "github.com/google/go-github/v48/github"
 	"github.com/spf13/cobra"
 	"github.com/thiagozs/githubpal/internal/config"
 	"github.com/thiagozs/githubpal/internal/github"
@@ -98,6 +99,8 @@ var updateCmd = &cobra.Command{
 			return
 		}
 
+		lastcmt := gh.CommitResult{}
+
 		for _, cmt := range cmts {
 			log.Info().Str("repo", cmt.GetRepository().GetName()).
 				Str("description", cmt.GetCommit().GetMessage()).
@@ -110,6 +113,11 @@ var updateCmd = &cobra.Command{
 				cmt.GetRepository().GetSVNURL(),
 				cmt.GetCommit().GetMessage()),
 			)
+
+			if cmt.GetCommit().GetCommitter().GetDate().
+				After(lastcmt.GetCommit().GetCommitter().GetDate()) {
+				lastcmt = *cmt
+			}
 		}
 
 		var tpl string
@@ -119,13 +127,25 @@ var updateCmd = &cobra.Command{
 		tpl = strings.Replace(tpl, "{{NAME}}", config.Params.GetName(), 1)
 		tpl = strings.ReplaceAll(tpl, "{{URL}}", config.Params.GetURL())
 
-		fmt.Println(tpl)
+		twoDays := 1 * 24 * time.Hour
+		ll := log.Info().Str("commit_message", lastcmt.GetCommit().GetMessage()).
+			Str("created_at", lastcmt.GetCommit().GetCommitter().GetDate().String()).
+			Str("after_at", now.Add(-twoDays).String()).
+			Str("Now", now.String())
 
-		if err := client.UpdateFileFromRepository(ctx, owner,
-			owner, "main", "README.md", tpl); err != nil {
-			log.Error().Err(err).Msg("error on update file")
+		if lastcmt.GetCommit().GetCommitter().GetDate().After(now.Add(-twoDays)) &&
+			lastcmt.GetCommit().GetMessage() != "Update CoverPage" {
+			if err := client.UpdateFileFromRepository(ctx, owner,
+				owner, "main", "README.md", tpl, "Update CoverPage"); err != nil {
+				log.Error().Err(err).Msg("error on update file")
+				return
+			}
+
+			ll.Msg("file updated")
 			return
 		}
+
+		ll.Msg("no updates")
 
 	},
 }

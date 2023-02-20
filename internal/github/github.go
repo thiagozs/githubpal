@@ -243,7 +243,7 @@ func (g *Github) GetReposNotForkedAndArchived(ctx context.Context,
 }
 
 func (g *Github) UpdateFileFromRepository(ctx context.Context, owner,
-	repo, branch, path, content string) error {
+	repo, branch, path, content, message string) error {
 
 	// get last commit
 	commit, err := g.GetLastCommitBranch(ctx, owner, repo, branch)
@@ -263,7 +263,7 @@ func (g *Github) UpdateFileFromRepository(ctx context.Context, owner,
 	// update file
 	_, _, err = g.client.Repositories.UpdateFile(ctx, owner, repo,
 		path, &github.RepositoryContentFileOptions{
-			Message: github.String("Update file"),
+			Message: github.String(message),
 			Content: []byte(content),
 			SHA:     file.SHA,
 			Branch:  github.String(branch),
@@ -298,4 +298,15 @@ func (g *Github) SearchCommits(ctx context.Context, query string) ([]*github.Com
 	}
 
 	return allCommits, nil
+}
+
+func (g *Github) GetFilesFromCommitResult(ctx context.Context, commit *github.CommitResult) ([]*github.CommitFile, error) {
+
+	files, _, err := g.client.Repositories.GetCommit(ctx, commit.GetRepository().GetOwner().GetLogin(),
+		commit.GetRepository().GetName(), commit.GetSHA(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return files.Files, nil
 }
