@@ -15,3 +15,5 @@ technology, just to name a few.
 ~ [{{URL}}][2]
 
 [2]: {{URL}}
+
+[![Thiago Zilli Sarmento profile views](https://u8views.com/api/v1/github/profiles/140747/views/day-week-month-total-count.svg)](https://u8views.com/github/thiagozs)
